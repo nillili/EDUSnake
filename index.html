@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Snake Game - Mobile Ready</title>
+    <title>Neon Snake Game - Mobile Optimized</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -19,7 +19,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* 상단부터 배치 */
             min-height: 100vh;
             background-color: #1a1a1a;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,6 +30,7 @@
 
         #game-container {
             position: relative;
+            margin-top: 60px; /* 상단 점수판 위치 확보를 위해 컨테이너를 내림 */
             box-shadow: 0 0 30px rgba(57, 255, 20, 0.15);
             border: 2px solid #333;
         }
@@ -62,57 +63,55 @@
             pointer-events: auto;
         }
 
+        /* 점수판 위치를 아래로 2칸 정도(약 50px-60px) 내림 */
         .score-board {
             position: absolute;
-            top: -50px;
+            top: -55px; /* 컨테이너 기준 상단 여백 조절 */
             left: 0;
             width: 100%;
             display: flex;
             justify-content: space-between;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: var(--snake-color);
+            padding: 0 5px;
+            box-sizing: border-box;
         }
 
         h1 {
             margin: 0;
-            font-size: 36px;
+            font-size: 32px;
             color: var(--food-color);
             text-shadow: 0 0 10px var(--food-color);
         }
 
-        .info {
-            font-size: 14px;
-            margin-top: 10px;
-            color: #ccc;
-        }
-
         #start-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
+            margin-top: 15px;
+            padding: 10px 25px;
             background: var(--snake-color);
             color: black;
             border: none;
             font-weight: bold;
             cursor: pointer;
             border-radius: 5px;
-            font-size: 18px;
+            font-size: 16px;
         }
 
-        /* 모바일 컨트롤러 스타일 */
+        /* 게임화면과 키보드 사이의 공백 최소화 */
         #controls {
-            margin-top: 30px;
+            margin-top: 10px; 
+            margin-bottom: 5px; /* 바닥 여백 최소화 */
             display: grid;
             grid-template-areas: 
                 ". up ."
                 "left down right";
-            gap: 10px;
+            gap: 8px;
             user-select: none;
         }
 
         .btn {
-            width: 65px;
-            height: 65px;
+            width: 60px;
+            height: 60px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(57, 255, 20, 0.3);
             border-radius: 50%;
@@ -120,14 +119,13 @@
             align-items: center;
             justify-content: center;
             color: var(--snake-color);
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
-            transition: background 0.1s, transform 0.1s;
+            transition: background 0.1s;
         }
 
         .btn:active {
             background: rgba(57, 255, 20, 0.2);
-            transform: scale(0.95);
         }
 
         #up { grid-area: up; }
@@ -137,7 +135,10 @@
 
         @media (min-width: 768px) {
             #controls {
-                display: none; /* 데스크톱에서는 숨김 */
+                display: none;
+            }
+            #game-container {
+                margin-top: 80px;
             }
         }
     </style>
@@ -155,12 +156,11 @@
 
         <div id="ui-layer" class="visible">
             <h1 id="status-text">SNAKE GAME</h1>
-            <p id="final-score" class="info">준비되셨나요?</p>
+            <p id="final-score" class="info" style="font-size: 14px; margin-top: 5px;">준비되셨나요?</p>
             <button id="start-btn">게임 시작</button>
         </div>
     </div>
 
-    <!-- 모바일 전용 방향키 -->
     <div id="controls">
         <div id="up" class="btn">▲</div>
         <div id="left" class="btn">◀</div>
@@ -169,7 +169,6 @@
     </div>
 
     <script>
-        // --- Audio Engine (Web Audio API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playTone(freq, type, duration, vol = 0.1) {
@@ -210,7 +209,6 @@
             clearInterval(bgmInterval);
         }
 
-        // --- Game Logic ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const uiLayer = document.getElementById('ui-layer');
@@ -235,7 +233,9 @@
         let gameLoop;
 
         function init() {
-            const minDim = Math.min(window.innerWidth * 0.9, 380);
+            // 모바일 화면 높이를 고려하여 캔버스 크기 조정
+            const availableHeight = window.innerHeight - 250; 
+            const minDim = Math.min(window.innerWidth * 0.9, 380, availableHeight);
             canvasSize = Math.floor(minDim / gridSize) * gridSize;
             canvas.width = canvasSize;
             canvas.height = canvasSize;
@@ -358,17 +358,14 @@
             uiLayer.classList.add('visible');
         }
 
-        // 입력 조작 함수
         function setDirection(newDx, newDy) {
             if (!gameActive) return;
-            // 반대 방향 입력 방지
             if (newDx === -dx && newDx !== 0) return;
             if (newDy === -dy && newDy !== 0) return;
             nextDx = newDx;
             nextDy = newDy;
         }
 
-        // 키보드 이벤트
         window.addEventListener('keydown', (e) => {
             switch (e.key) {
                 case 'ArrowUp': setDirection(0, -1); break;
@@ -378,11 +375,10 @@
             }
         });
 
-        // 모바일 버튼 이벤트
-        document.getElementById('up').addEventListener('pointerdown', () => setDirection(0, -1));
-        document.getElementById('down').addEventListener('pointerdown', () => setDirection(0, 1));
-        document.getElementById('left').addEventListener('pointerdown', () => setDirection(-1, 0));
-        document.getElementById('right').addEventListener('pointerdown', () => setDirection(1, 0));
+        document.getElementById('up').addEventListener('pointerdown', (e) => { e.preventDefault(); setDirection(0, -1); });
+        document.getElementById('down').addEventListener('pointerdown', (e) => { e.preventDefault(); setDirection(0, 1); });
+        document.getElementById('left').addEventListener('pointerdown', (e) => { e.preventDefault(); setDirection(-1, 0); });
+        document.getElementById('right').addEventListener('pointerdown', (e) => { e.preventDefault(); setDirection(1, 0); });
 
         uiLayer.addEventListener('click', () => {
             if (!gameActive) resetGame();
